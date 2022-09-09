@@ -1,0 +1,51 @@
+function crg = crg_append_ramp_start_end(crg_event_split, crg_event)
+
+rnu = [crg_event.ramp_length_param(1) crg_event.ramp_length_param(3)]
+ramp_flat_length = (crg_event.ramp_length_param(2) - crg_event.ramp_length_param(1))/crg_event.inc(1);
+ramp_ramp_length = (crg_event.ramp_length_param(3) - crg_event.ramp_length_param(2))/crg_event.inc(1)+1;
+crg_ramp = crg_gen_csb2crg0(crg_event.inc, rnu, crg_event.sv);
+crg_ramp_start = crg_ramp;
+crg_ramp_end = crg_ramp;
+[rnu rnv] = size(crg_ramp_start.z);
+
+z_mean = mean(crg_event_split.z(1:crg_event.mean_filter_param,:));
+z_mean_start = mean(z_mean);
+%z_ramp_length = rnu - ramp_flat_length+1;
+
+flat_ramp = single(z_mean_start.*ones(1,rnv));
+mean_flat_start_ramp = single(z_mean_start.*ones(ramp_flat_length,rnv));
+x = logspace(log10(1),log(0.1),ramp_ramp_length);
+spline_v = plus((x.*(flat_ramp' - z_mean')),z_mean');
+logaritmic_ramp = spline_v';
+
+crg_ramp_start.z(1:ramp_flat_length,:) = mean_flat_start_ramp;
+crg_ramp_start.z(ramp_flat_length+1:rnu,:) = logaritmic_ramp;
+
+crg_ramp_start.v(1:2) = crg_event_split.v;
+crg_ramp_start.head.vmax = crg_event_split.v(2);
+crg_ramp_start.head.vmin = crg_event_split.v(1);
+
+crg = crg_append(crg_ramp_start, crg_event_split);
+
+%% Append end ramp
+z_mean = mean(crg_event_split.z(end-mean_filter_param:end,:));
+z_mean_end = mean(z_mean);
+%z_ramp_length = rnu - ramp_flat_length+1;
+
+flat_ramp = single(z_mean_end.*ones(1,rnv));
+mean_flat_end_ramp = single(z_mean_end.*ones(ramp_flat_length,rnv));
+x = logspace(log10(1),log(0.1),ramp_ramp_length);
+spline_v = plus((x.*(flat_ramp' - z_mean')),z_mean');
+logaritmic_ramp = spline_v';
+
+crg_ramp_end.z(ramp_ramp_length+1:end,:) = mean_flat_end_ramp;
+crg_ramp_end.z(1:ramp_ramp_length,:) = flip(logaritmic_ramp);
+
+crg_ramp_end.v(1:2) = crg_event_split.v;
+crg_ramp_end.head.vmax = crg_event_split.v(2);
+crg_ramp_end.head.vmin = crg_event_split.v(1);
+
+crg_app = crg_append(crg_app, crg_ramp_end);
+
+
+end
