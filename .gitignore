@@ -1,2 +1,4 @@
 archive
 delimiter/~$Delimiter.xlsx
+generated_crg/*
+mat_export/*
